@@ -1,0 +1,128 @@
+https://github.com/Erenakmcx/Yapay-zeka-ile-pong/tree/mainimport pygame
+import random
+
+pygame.init()  # pygame'i başlatıyoruz
+
+# Ekran ayarları
+GENISLIK, YUKSEKLIK = 800, 600
+BEYAZ = (255, 255, 255)
+SIYAH = (0, 0, 0)
+
+# Ekranı oluşturuyoruz
+ekran = pygame.display.set_mode((GENISLIK, YUKSEKLIK))
+pygame.display.set_caption("pong ama ai ile")
+
+# Top ve çubuk ayarları
+TOP_BOYUTU = 20
+CUBUK_GENISLIK, CUBUK_YUKSEKLIK = 30, 100
+
+# Başlangıç hızları
+oyuncu_hizi = 6
+yapay_zeka_hizi = 6
+
+# Topun başlangıç konumu ve yönü
+top_x, top_y = GENISLIK // 2, YUKSEKLIK // 2
+top_dx, top_dy = random.choice([-5, 5]), random.choice([-5, 5])
+
+# Çubukların başlangıç konumları
+oyuncu_cubugu_y = YUKSEKLIK // 2 - CUBUK_YUKSEKLIK // 2
+yapay_zeka_cubugu_y = YUKSEKLIK // 2 - CUBUK_YUKSEKLIK // 2
+
+# Skorlar
+oyuncu_skor = 0
+yapay_zeka_skor = 0
+
+# Saat (FPS kontrolü için)
+saat = pygame.time.Clock()
+
+calisiyor = True  # Oyun döngüsü
+while calisiyor:
+    ekran.fill(SIYAH)  # Arkaplanı siyah yapıyoruz
+
+    # Skora göre hız ayarı (geriden gelene ufak bir destek veriyoruz)
+    if oyuncu_skor > yapay_zeka_skor:
+        oyuncu_hizi_limit = 4
+        yapay_zeka_hizi = 6
+    elif yapay_zeka_skor > oyuncu_skor:
+        oyuncu_hizi_limit = 6
+        yapay_zeka_hizi = 4
+    else:
+        oyuncu_hizi_limit = 6
+        yapay_zeka_hizi = 6
+
+    # Eventleri yakalıyoruz
+    for etkinlik in pygame.event.get():
+        if etkinlik.type == pygame.QUIT:
+            calisiyor = False
+        elif etkinlik.type == pygame.KEYDOWN:
+            if etkinlik.key == pygame.K_w:
+                oyuncu_hizi = -oyuncu_hizi_limit  # Yukarı hareket
+            elif etkinlik.key == pygame.K_s:
+                oyuncu_hizi = oyuncu_hizi_limit  # Aşağı hareket
+        elif etkinlik.type == pygame.KEYUP:
+            if etkinlik.key in [pygame.K_w, pygame.K_s]:
+                oyuncu_hizi = 0  # Tuş bırakılınca dur
+
+    # Oyuncu çubuğunu hareket ettiriyoruz (sınırlar içinde)
+    oyuncu_cubugu_y += oyuncu_hizi
+    oyuncu_cubugu_y = max(0, min(YUKSEKLIK - CUBUK_YUKSEKLIK, oyuncu_cubugu_y))
+
+    # Yapay zeka çubuğunu topa göre hareket ettiriyoruz
+    if top_y < yapay_zeka_cubugu_y + CUBUK_YUKSEKLIK // 2:
+        yapay_zeka_cubugu_y -= yapay_zeka_hizi
+    elif top_y > yapay_zeka_cubugu_y + CUBUK_YUKSEKLIK // 2:
+        yapay_zeka_cubugu_y += yapay_zeka_hizi
+
+    yapay_zeka_cubugu_y = max(0, min(YUKSEKLIK - CUBUK_YUKSEKLIK, yapay_zeka_cubugu_y))
+
+    # Topu hareket ettiriyoruz
+    top_x += top_dx
+    top_y += top_dy
+
+    # Top ekranın üstüne veya altına çarparsa yönünü değiştir
+    if top_y <= 0 or top_y >= YUKSEKLIK - TOP_BOYUTU:
+        top_dy *= -1
+
+    # Top çubuğa çarparsa yönünü değiştir
+    if (top_x <= CUBUK_GENISLIK and oyuncu_cubugu_y < top_y < oyuncu_cubugu_y + CUBUK_YUKSEKLIK) or (top_x >= GENISLIK - CUBUK_GENISLIK - TOP_BOYUTU and yapay_zeka_cubugu_y < top_y < yapay_zeka_cubugu_y + CUBUK_YUKSEKLIK):
+        top_dx *= -1
+
+    # Top oyuncunun arkasına geçerse yapay zekaya puan ver
+    if top_x < 0:
+        yapay_zeka_skor += 1
+        top_x, top_y = GENISLIK // 2, YUKSEKLIK // 2
+        if yapay_zeka_skor > oyuncu_skor:
+            top_dx, top_dy = 5, random.choice([-5, 5])
+        else:
+            top_dx, top_dy = random.choice([-5, 5]), random.choice([-5, 5])
+        oyuncu_cubugu_y = YUKSEKLIK // 2 - CUBUK_YUKSEKLIK // 2
+        oyuncu_hizi = 0
+
+    # Top yapay zekanın arkasına geçerse oyuncuya puan ver
+    if top_x > GENISLIK:
+        oyuncu_skor += 1
+        top_x, top_y = GENISLIK // 2, YUKSEKLIK // 2
+        if oyuncu_skor > yapay_zeka_skor:
+            top_dx, top_dy = -5, random.choice([-5, 5])
+        else:
+            top_dx, top_dy = random.choice([-5, 5]), random.choice([-5, 5])
+        yapay_zeka_cubugu_y = YUKSEKLIK // 2 - CUBUK_YUKSEKLIK // 2
+
+    # Skorları yazdırıyoruz
+    font = pygame.font.SysFont("bold", 30)
+    oyuncu_puan = font.render(f"Sen: {oyuncu_skor}", True, BEYAZ)
+    yapay_zeka_puan = font.render(f"Yapay Zeka: {yapay_zeka_skor}", True, BEYAZ)
+
+    ekran.blit(oyuncu_puan, (50, 20))
+    ekran.blit(yapay_zeka_puan, (GENISLIK - 200, 20))
+
+    # Çubukları ve topu çiziyoruz
+    pygame.draw.rect(ekran, BEYAZ, (0, oyuncu_cubugu_y, CUBUK_GENISLIK, CUBUK_YUKSEKLIK))
+    pygame.draw.rect(ekran, BEYAZ, (GENISLIK - CUBUK_GENISLIK, yapay_zeka_cubugu_y, CUBUK_GENISLIK, CUBUK_YUKSEKLIK))
+    pygame.draw.ellipse(ekran, BEYAZ, (top_x, top_y, TOP_BOYUTU, TOP_BOYUTU))
+
+    # Ekranı güncelliyoruz
+    pygame.display.flip()
+    saat.tick(70)  # FPS
+
+pygame.quit()
