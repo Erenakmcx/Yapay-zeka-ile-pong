@@ -1,4 +1,4 @@
-https://github.com/Erenakmcx/Yapay-zeka-ile-pong/tree/mainimport pygame
+import pygame
 import random
 
 pygame.init()  # pygame'i başlatıyoruz
